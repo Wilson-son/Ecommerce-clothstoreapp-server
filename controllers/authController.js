@@ -1,11 +1,11 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
-
-
+import sendMail from "../utils/sendMail.js";
+import crypto from "crypto";
 
 export const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { username, email, password } = req.body;
 
   const userExists = await User.findOne({ email });
 
@@ -17,13 +17,10 @@ export const registerUser = async (req, res) => {
 
   const salt = await bcrypt.genSalt(10);
 
-  const hashedPassword = await bcrypt.hash(
-    password,
-    salt
-  );
+  const hashedPassword = await bcrypt.hash(password, salt);
 
   const user = await User.create({
-    name,
+    username,
     email,
     password: hashedPassword,
   });
@@ -32,76 +29,93 @@ export const registerUser = async (req, res) => {
 
   res.status(201).json({
     _id: user._id,
-    name: user.name,
+    username: user.username,
     email: user.email,
   });
 };
 
-
-
 export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    console.log("Login Request:", req.body);
 
-  if (
-    user &&
-    (await bcrypt.compare(
-      password,
-      user.password
-    ))
-  ) {
-    generateToken(res, user._id);
+    const user = await User.findOne({ email }).select("+password");
 
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-    });
-  } else {
-    res.status(401).json({
+    console.log("User Found:", user);
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      generateToken(res, user._id);
+
+      return res.json({
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      });
+    }
+
+    return res.status(401).json({
       message: "Invalid credentials",
     });
-  }
-};
-
-export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.status(404).json({
-      message: "User not found",
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: error.message,
     });
   }
-
-  const resetToken = user.getResetPasswordToken();
-
-  await user.save({ validateBeforeSave: false });
-
-  const resetUrl =
-    `http://localhost:5173/reset-password/${resetToken}`;
-
-  // Send email here
-
-  console.log(resetUrl);
-
-  res.status(200).json({
-    success: true,
-    message: "Reset link sent",
-  });
 };
 
+
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const resetToken = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+    await sendMail({
+      email: user.email,
+      subject: "Password Reset",
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetUrl}">Reset Password</a>
+        <p>If you didn't request this, ignore this email.</p>
+      `,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Reset link sent to email",
+    });
+
+  } catch (error) {
+    console.error("Forgot password error →", error); // ← full error in terminal
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to send email",
+    });
+  }
+};
+
+
 export const resetPassword = async (req, res) => {
-  const resetPasswordToken = crypto
+  const resetToken = crypto
     .createHash("sha256")
     .update(req.params.token)
     .digest("hex");
 
   const user = await User.findOne({
-    resetPasswordToken,
-    resetPasswordExpire: {
+    resetToken,
+    resetTokenExpiry: {
       $gt: Date.now(),
     },
   });
@@ -112,15 +126,12 @@ export const resetPassword = async (req, res) => {
     });
   }
 
-  const hashedPassword = await bcrypt.hash(
-    req.body.password,
-    10
-  );
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
   user.password = hashedPassword;
 
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpire = undefined;
+  user.resetToken = undefined;
+  user.resetTokenExpiry = undefined;
 
   await user.save();
 
@@ -129,7 +140,6 @@ export const resetPassword = async (req, res) => {
     message: "Password reset successful",
   });
 };
-
 
 export const logoutUser = (req, res) => {
   res.cookie("jwt", "", {
