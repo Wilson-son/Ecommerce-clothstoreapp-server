@@ -30,16 +30,16 @@ const UserSchema = new mongoose.Schema(
 
 
 UserSchema.methods.getResetPasswordToken = function () {
-  const resetToken = crypto.randomBytes(20).toString("hex");
+  const resetNewToken = crypto.randomBytes(20).toString("hex");
 
-  this.resetPasswordToken = crypto
+  this.resetToken = crypto
     .createHash("sha256")
-    .update(resetToken)
+    .update(resetNewToken)
     .digest("hex");
 
-  this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+  this.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
 
-  return resetToken;
+  return resetNewToken;
 };
 
 
