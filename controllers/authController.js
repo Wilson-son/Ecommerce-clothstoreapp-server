@@ -5,33 +5,51 @@ import sendMail from "../utils/sendMail.js";
 import crypto from "crypto";
 
 export const registerUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  try {
+    const { username, email, password } = req.body;
 
-  const userExists = await User.findOne({ email });
+     const userExists = await User.findOne({ email });
 
-  if (userExists) {
-    return res.status(400).json({
-      message: "User already exists",
+    if (userExists) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
+    const usernameExists = await User.findOne({ username });
+
+    if (usernameExists) {
+      return res.status(400).json({
+        message: "Username already exists",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({
+      username,
+      email,
+      password: hashedPassword,
+    });
+
+    generateToken(res, user._id);
+
+    res.status(201).json({
+      message: "Registration successful",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("REGISTER ERROR:", error);
+
+    res.status(500).json({
+      message: error.message,
     });
   }
-
-  const salt = await bcrypt.genSalt(10);
-
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  const user = await User.create({
-    username,
-    email,
-    password: hashedPassword,
-  });
-
-  generateToken(res, user._id);
-
-  res.status(201).json({
-    _id: user._id,
-    username: user.username,
-    email: user.email,
-  });
 };
 
 export const loginUser = async (req, res) => {
@@ -47,10 +65,13 @@ export const loginUser = async (req, res) => {
     if (user && (await bcrypt.compare(password, user.password))) {
       generateToken(res, user._id);
 
-      return res.json({
-        _id: user._id,
-        username: user.username,
-        email: user.email,
+      res.status(201).json({
+        message: "Login successful",
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+        },
       });
     }
 
@@ -64,8 +85,6 @@ export const loginUser = async (req, res) => {
     });
   }
 };
-
-
 
 export const forgotPassword = async (req, res) => {
   try {
@@ -96,7 +115,6 @@ export const forgotPassword = async (req, res) => {
       success: true,
       message: "Reset link sent to email",
     });
-
   } catch (error) {
     console.error("Forgot password error →", error); // ← full error in terminal
     res.status(500).json({
@@ -105,7 +123,6 @@ export const forgotPassword = async (req, res) => {
     });
   }
 };
-
 
 export const resetPassword = async (req, res) => {
   const resetToken = crypto
@@ -150,4 +167,24 @@ export const logoutUser = (req, res) => {
   res.json({
     message: "Logged out",
   });
+};
+
+export const getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 };
