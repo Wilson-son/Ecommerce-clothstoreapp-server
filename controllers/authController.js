@@ -52,35 +52,37 @@ export const registerUser = async (req, res) => {
   }
 };
 
+
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("Login Request:", req.body);
-
     const user = await User.findOne({ email }).select("+password");
 
-    console.log("User Found:", user);
-
-    if (user && (await bcrypt.compare(password, user.password))) {
-      generateToken(res, user._id);
-
-      res.status(201).json({
-        message: "Login successful",
-        user: {
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-        },
-      });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    return res.status(401).json({
-      message: "Invalid credentials",
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    generateToken(res, user._id);
+
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
     });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
+    return res.status(500).json({
       message: error.message,
     });
   }
@@ -172,6 +174,8 @@ export const logoutUser = (req, res) => {
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
+
+    console.log("Current User:", user);
 
     if (!user) {
       return res.status(404).json({
