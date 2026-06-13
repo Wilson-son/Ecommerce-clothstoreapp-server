@@ -58,33 +58,60 @@ const productSchema = new mongoose.Schema(
     },
 
     sizes: {
-      type: [String], // ["S", "M", "L", "XL"]
-      default: [],
-    },
-
-    colors: {
-      type: [String], // ["Red", "Blue"]
-      default: [],
-    },
-
-    image: {
       type: [String],
-      required: true,
+      default: [],
     },
 
-      public_id: {
-      type: String,
-      required: true,
+    color: {
+      name: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      hex: {
+        type: String,
+        required: true,
+        trim: true,
+      },
     },
+
+    images: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+
+        public_id: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
 
     gender: {
       type: String,
       enum: ["Men", "Women", "Kids", "Unisex"],
       default: "Women",
-    },  
+    },
+
+    rating: {
+      type: Number,
+      default: 0,
+    },
+
+    numReviews: {
+      type: Number,
+      default: 0,
+    },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
+
+productSchema.index({ category: 1, brand: 1, price: 1 });
+productSchema.index({ name: "text" });
 
 const Product = mongoose.model("Product", productSchema);
 

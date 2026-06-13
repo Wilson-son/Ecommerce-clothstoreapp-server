@@ -161,15 +161,19 @@ export const resetPassword = async (req, res) => {
 };
 
 export const logoutUser = (req, res) => {
-  res.cookie("jwt", "", {
+  res.clearCookie("jwt", {
     httpOnly: true,
-    expires: new Date(0),
+    sameSite: "strict",
+    path: "/",
   });
 
-  res.json({
-    message: "Logged out",
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
   });
 };
+
+
 
 export const getCurrentUser = async (req, res) => {
   try {

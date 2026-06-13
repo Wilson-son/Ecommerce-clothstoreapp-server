@@ -13,12 +13,7 @@ const UserSchema = new mongoose.Schema(
     },
     password: { type: String, select: false },
     role: { type: String, enum: ["user", "admin"], default: "user" },
-    avatar: { type: String, default: "" },
-    avatarPublicId: { type: String, default: null },
    
-
-
-
     resetToken: { type: String, index: true },
     resetTokenExpiry: { type: Date },
 

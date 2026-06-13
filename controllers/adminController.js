@@ -1,14 +1,32 @@
 import User from "../models/User.js";
 import Product from "../models/Product.js";
+import Subscriber from "../models/Subscriber.js"
 
 export const getDashboardStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalProducts = await Product.countDocuments();
+    const totalSubscribers = await Subscriber.countDocuments();
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const usersToday = await User.countDocuments({
+      createdAt: {
+        $gte: startOfDay,
+      },
+    });
+
+    const subscribersToday = await Subscriber.countDocuments({
+      createdAt: { $gte: startOfDay },
+    });
 
     res.json({
       totalUsers,
       totalProducts,
+      totalSubscribers,
+      usersToday,
+      subscribersToday,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -43,7 +61,6 @@ export const deleteUser = async (req, res) => {
     });
   }
 };
-
 
 export const getAllUsers = async (req, res) => {
   try {

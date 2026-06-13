@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import newsletterRoutes from "./routes/newsletterRoutes.js";
 
 import connectDB from "./config/db.js";
 
@@ -22,6 +23,9 @@ app.use(
       "http://localhost:5175",
       "http://localhost:5176",
       "http://localhost:5177",
+      "http://localhost:5178",
+      "http://localhost:5179",
+      
     ],
     credentials: true,
   })
@@ -37,7 +41,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/upload", uploadRoutes);
-
+app.use("/api/newsletter", newsletterRoutes);
 
 
 app.get("/", (req, res) => {

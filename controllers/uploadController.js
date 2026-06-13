@@ -9,17 +9,21 @@ export const uploadImage = async (req, res) => {
       });
     }
 
+    console.log("Uploading file:", req.file.path);
+
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: "products",
     });
+    console.log("Cloudinary result:", result);
 
-    await fs.unlink(req.file.path);
+    await fs.unlink(req.file.path).catch(() => {});
 
     res.json({
-      imageUrl: result.secure_url,
+      imageUrl: result.secure_url, 
       public_id: result.public_id,
     });
   } catch (error) {
+     console.error("Upload error:", error); 
     if (req.file?.path) {
       try {
         await fs.unlink(req.file.path);
