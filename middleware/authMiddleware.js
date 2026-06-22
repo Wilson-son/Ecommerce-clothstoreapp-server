@@ -3,11 +3,11 @@ import crypto from "crypto";
 import User from "../models/User.js";
 
 export const protect = async (req, res, next) => {
-  const token = req.cookies.jwt;
+  const token = req.cookies?.jwt;
 
   if (!token) {
     return res.status(401).json({
-      message: "Not authorized",
+      message:"Not authorized, token missing or invalid",
     });
   }
 

@@ -1,12 +1,14 @@
 import User from "../models/User.js";
 import Product from "../models/Product.js";
 import Subscriber from "../models/Subscriber.js"
+import Order from "../models/Order.js"
 
 export const getDashboardStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalProducts = await Product.countDocuments();
     const totalSubscribers = await Subscriber.countDocuments();
+    const totalOrders = await Order.countDocuments();
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -25,8 +27,10 @@ export const getDashboardStats = async (req, res) => {
       totalUsers,
       totalProducts,
       totalSubscribers,
+      totalOrders,
       usersToday,
       subscribersToday,
+      
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

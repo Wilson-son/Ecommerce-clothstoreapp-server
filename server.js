@@ -7,7 +7,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
-
+import orderRoutes from "./routes/orderRoutes.js";
 import connectDB from "./config/db.js";
 
 dotenv.config();
@@ -15,18 +15,14 @@ connectDB();
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-      "http://localhost:5176",
-      "http://localhost:5177",
-      "http://localhost:5178",
-      "http://localhost:5179",
-      
-    ],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -42,6 +38,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/newsletter", newsletterRoutes);
+app.use("/api/orders", orderRoutes);
 
 
 app.get("/", (req, res) => {
