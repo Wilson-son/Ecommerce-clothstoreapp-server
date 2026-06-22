@@ -163,7 +163,8 @@ export const resetPassword = async (req, res) => {
 export const logoutUser = (req, res) => {
   res.clearCookie("jwt", {
     httpOnly: true,
-    sameSite: "strict",
+    secure: true,
+    sameSite: "none",
     path: "/",
   });
 

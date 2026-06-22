@@ -1,9 +1,7 @@
-
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
-
 
 const generateToken = (res, user) => {
   const token = jwt.sign(
@@ -14,17 +12,17 @@ const generateToken = (res, user) => {
     process.env.JWT_SECRET,
     {
       expiresIn: "30d",
-    }
+    },
   );
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: "none",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
-  return token; 
+  return token;
 };
 
 export default generateToken;
